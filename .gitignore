@@ -1,3 +1,5 @@
+*.bbl
+*.blg
 .*.aux
 .*.d
 *.a
@@ -21,6 +23,10 @@
 *.vo
 *.vok
 *.vos
+*.aux
+*.log
+*.out
+*.pdf
 .coq-native
 .csdp.cache
 .lia.cache
