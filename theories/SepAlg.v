@@ -1,4 +1,4 @@
-Require Export ssrbool ssreflect.
+Require Export common.
 
 (** Cancellative separation algebra  *)
 Module Type SepAlg.
