@@ -41,7 +41,7 @@ Arguments EAdd {n}.
       |  a ; b ▻ c  => denoteLabel ρ a \+ denoteLabel ρ b = denoteLabel ρ c  /\ valid_op (denoteLabel ρ c)
       end.
 
-    Definition IsZero {n} (a : Label n) := LUnit ; a ▻ LUnit.
+    Notation IsZero a := (LUnit ; a ▻ LUnit).
 
     (* The Assertion variables are shallow-embedded, unlike the Exp variables *)
     Inductive Assertion : Type :=
@@ -159,18 +159,47 @@ Arguments EAdd {n}.
 
     where "Ψ ;; Γ ⊢ Δ" := (Deriv Ψ Γ Δ).
 
-    Definition denoteTernaries {n} (ρ : fin n -> T) := Forall (denoteTernaryRelAtom ρ).
+    Fixpoint denoteTernaries {n} (ρ : fin n -> T) Ψ:=
+      match Ψ with
+      | nil => True
+      | T::Ψ => denoteTernaryRelAtom ρ T /\ denoteTernaries ρ Ψ
+      end.
 
-    Definition denoteSequentL {n} (ρ : fin n -> T) :=
-      Forall (fun '(a , A) => denoteAssertion A (denoteLabel ρ a)).
+    Fixpoint denoteSequentL {n} (ρ : fin n -> T) Γ :=
+      match Γ with
+      | nil => True
+      | (x , A)::Γ => denoteAssertion A (denoteLabel ρ x) /\ denoteSequentL ρ Γ
+      end.
 
-    Definition denoteSequentR {n} (ρ : fin n -> T) :=
-      Exists (fun '(a , A) => denoteAssertion A (denoteLabel ρ a)).
+    Fixpoint denoteSequentR {n} (ρ : fin n -> T) Δ :=
+      match Δ with
+      | nil => False
+      | (x , A)::Δ => denoteAssertion A (denoteLabel ρ x) \/ denoteSequentR ρ Δ
+      end.
 
     Definition SemDeriv {n} Ψ Γ Δ : Prop :=
       forall (ρ : fin n -> T), denoteTernaries ρ Ψ /\ denoteSequentL ρ Γ -> denoteSequentR ρ Δ.
 
     Notation "Ψ ;, Γ ⊨ Δ" := (SemDeriv Ψ Γ Δ) (at level 70, no associativity).
+
+    Lemma DId_sound {n} (Ψ : list (TernaryRelAtom n)) w p Γ Δ :
+    (* ------------------- *)
+      Ψ ;, (w , AVar p)::Γ ⊨ (w , AVar p)::Δ.
+    Proof.
+      move => ρ //=. tauto.
+    Qed.
+
+    Lemma DEmpL_sound {n} w (Ψ : list (TernaryRelAtom n)) Γ Δ :
+      IsZero w :: Ψ ;, Γ ⊨ Δ ->
+      (* ------------------------- *)
+      Ψ ;, (w , AEmp)::Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv => //= h ρ [h0[h1 h2]].
+      apply h => {h}.
+      repeat split => //.
+      - rewrite h1. by rewrite left_id.
+      - apply valid_unit.
+    Qed.
 
     Theorem soundness {n} (Ψ : list (TernaryRelAtom n)) Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
