@@ -28,7 +28,7 @@ making it cumbersome to initialize.
 A more structured and general altenative by Hou et al~\cite{hou2017proof} for Isabelle/HOL, provides powerful automated reasoning
 capabilities within Separation Logics. Adapting these tactics --- specifically \emph{separata} and 
 \emph{starforce} --- for Coq's Ltac2 language can greatly enhance the separation logic verification process in Coq.
-By abstracting these tactics SAs~\cite{calcagno2007local}, we aim to offer
+By abstracting these tactics over SAs~\cite{calcagno2007local} we aim to offer
 flexible tactics that can be applied to programs with ghost state, permissions~\cite{bornat2005permission}, 
 histories~\cite{sergey2015specifying} and more.
 
@@ -36,7 +36,7 @@ histories~\cite{sergey2015specifying} and more.
 Our goal is to implement the \emph{separata} and \emph{starforce} tactics for separation logic in Coq's Ltac2, abstracting over
 a Partial Commutative Monoid (PCM) structure modeling the shared resources at hand. This implementation will not only replicate
 the functionalities outlined in the referenced paper but also extend them with techniques
-like \emph{proof-by-reflection}.\lef{TODO: Proof-by-reflection example here.}
+like \emph{proof-by-reflection}.
 
 We will evaluate the success of this project by semi-automating the proving of two examples over at two different SAs.
 
@@ -45,13 +45,12 @@ This project will result in several key components that improve the automated re
 separation logics. The core deliverables include:
 
 \begin{itemize}
-\item \textbf{Separata Tactic:} A fully implemented separata tactic within Coq's Ltac2 language, enabling automated
+\item \textbf{Separata Tactic:} A fully implemented \emph{separata} tactic within Coq's Ltac2 language, enabling automated
 reasoning over separation logic assertions. The \emph{separata} tactic is based on an embedding of a labelled sequent calculus
-and is designed to work with abstract separation logic~\cite{hou2017proof}. The implementation will be documented and tested to ensure
-it meets the functional requirements derived frp, the original separata tactic in Isabel/HOL.
+and is designed to work with abstract separation logic~\cite{hou2017proof}.
 
 \item \textbf{Starforce tactic:} Also implemented in Ltac2, equipped with specialized proof search strategies for efficiently handling
-separating conjunctions and magic wands. This tactic will further automate the reasoning process in separation logic, with more specialized
+separating conjunctions and magic wands. This tactic will further automate the reasoning process with more specialized
 automation.
 
 \item \textbf{PCM Algebraic Structure:} An algebraic structure for Partial Commutative Monoids (PCMs).
