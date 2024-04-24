@@ -229,6 +229,17 @@ Require Export SepAlg.
       rewrite /SemDeriv //= /sbot . tauto.
     Qed.
 
+    Lemma DStarL_sound Ψ Γ Δ x y z A B :
+      (x ; y ▻ z) ::
+        Ψ ;,
+      (x , A) :: (y , B) :: Γ
+        ⊨ Δ ->
+      (* ------------------------------ *)
+      Ψ ;, (z, AStar A B) :: Γ ⊨ Δ.
+    Proof.
+      unfold SemDeriv. simpl. unfold sstar.
+    Admitted.
+
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
     Proof.
