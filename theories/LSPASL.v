@@ -1,44 +1,35 @@
-From Hammer Require Import Hammer.
 Require Export SepAlg.
-
-Inductive Exp n :=
-| EVar (i : fin n)
-| EUnit
-| EAdd (a b : Exp n).
-
-Arguments EVar {n}.
-Arguments EUnit {n}.
-Arguments EAdd {n}.
 
   Module Type LabeledSeqCalculus
     (Export sepalg : SepAlg).
     Local Open Scope sepscope.
 
+    Inductive Exp :=
+    | EVar (a : T)
+    | EUnit
+    | EAdd (a b : Exp).
 
-    Variant Label n := LVar (p : fin n) | LUnit.
-    Arguments LVar{n}.
-    Arguments LUnit{n}.
+    Variant Label := LVar (p : T) | LUnit.
 
-    Variant TernaryRelAtom n : Type :=  TRA : Label n ->  Label n -> Label n -> TernaryRelAtom n.
-    Arguments TRA {n}.
+    Variant TernaryRelAtom : Set :=  TRA : Label ->  Label -> Label -> TernaryRelAtom.
     Notation " a ; b ▻ c " := (TRA a b c) (at level 70, no associativity).
 
-    Definition denoteLabel {n} (ρ : fin n -> T) (l : Label n) :=
+    Definition denoteLabel (l : Label) :=
       match l with
-      | LVar p => ρ p
+      | LVar p => p
       | LUnit => unit_op
       end.
 
-    Fixpoint denoteExp {n} (ρ : fin n -> T) (t : Exp n) : T :=
+    Fixpoint denoteExp (t : Exp) : T :=
       match t with
-      | EVar i => ρ i
+      | EVar i => i
       | EUnit => unit_op
-      | EAdd a b => denoteExp ρ a \+ denoteExp ρ b
+      | EAdd a b => denoteExp a \+ denoteExp b
       end.
 
-    Definition denoteTernaryRelAtom {n} (ρ : fin n -> T) (t : TernaryRelAtom n) : Prop :=
+    Definition denoteTernaryRelAtom (t : TernaryRelAtom) : Prop :=
       match t with
-      |  a ; b ▻ c  => denoteLabel ρ a \+ denoteLabel ρ b = denoteLabel ρ c  /\ valid_op (denoteLabel ρ c)
+      |  a ; b ▻ c  => denoteLabel a \+ denoteLabel b = denoteLabel c  /\ valid_op (denoteLabel c)
       end.
 
     Notation IsZero a := (LUnit ; a ▻ LUnit).
@@ -71,38 +62,8 @@ Arguments EAdd {n}.
 
     Reserved Notation "Ψ ;; Γ ⊢ Δ" (at level 90 , no associativity).
 
-    Definition shiftL {n} (l : Label n) : Label (S n).
-      refine (match l with
-      | LVar p => LVar _
-      | LUnit => LUnit
-              end).
-      simpl.
-      exact (Some p).
-    Defined.
-
-    Definition shiftHyps {n} (Γ : list (Label n * Assertion)) : list (Label (S n) * Assertion).
-      revert Γ.
-      apply map.
-      intros (a & b).
-      split.
-      revert a. apply shiftL.
-      exact b.
-    Defined.
-
-    Definition shiftATom {n} (t : TernaryRelAtom n) : TernaryRelAtom (S n) :=
-      match t with
-      | TRA a b c => TRA (shiftL a) (shiftL b) (shiftL c)
-      end.
-
-    Definition shiftTAtoms  {n} (Γ : list (TernaryRelAtom n)) :
-      list (TernaryRelAtom (S n)).
-      revert Γ.
-      apply map.
-      apply shiftATom.
-    Defined.
-
-    Inductive Deriv {n} :
-      list (TernaryRelAtom n) -> list (Label n * Assertion) -> list (Label n * Assertion) -> Prop :=
+    Inductive Deriv :
+      list TernaryRelAtom -> list (Label * Assertion) -> list (Label * Assertion) -> Prop :=
     | DId Ψ w p Γ Δ :
     (* ------------------- *)
       Ψ ;; (w , AVar p)::Γ ⊢ (w , AVar p)::Δ
@@ -128,20 +89,38 @@ Arguments EAdd {n}.
     | DEmpR Ψ Γ Δ :
       Ψ ;; Γ ⊢ (LUnit, AEmp) :: Δ
 
-    (* Some var_zero is just 1 + 0 *)
-    (* After shifting the context by 2 through two consecutive uses of
-    shiftHyps/shiftTAtoms, the numbers 0 and 1 become fresh
-    variables *)
-    | DStarL Ψ (Γ  : list (Label n * Assertion)) Δ z A B :
-      (LVar var_zero ; LVar (Some var_zero : fin (S (S n))) ▻ shiftL (shiftL z)) ::
-        (shiftTAtoms (shiftTAtoms Ψ)) ;;
-      (LVar var_zero , A) :: (LVar (Some var_zero : fin (S (S n))) , B) :: (shiftHyps (shiftHyps Γ) )
-        ⊢ (shiftHyps (shiftHyps Δ)) ->
+    | DAndL Ψ Γ Δ w A B :
+      Ψ ;; (w , A) :: (w , B) :: Γ ⊢ Δ ->
+      (* ---------------------------- *)
+      Ψ ;; (w , AAnd A B ) :: Γ ⊢ Δ
+
+    | DAndR Ψ Γ Δ w A B :
+      Ψ ;; Γ ⊢ (w , A) :: Δ ->
+      Ψ ;; Γ ⊢ (w , B) :: Δ ->
+      (* ---------------------------- *)
+      Ψ ;; Γ ⊢ (w , AAnd A B ) :: Δ
+
+    | DImpL Ψ Γ Δ w A B :
+      Ψ ;; Γ ⊢ (w, A) :: Δ ->
+      Ψ ;; (w, B) :: Γ ⊢ Δ ->
+      (* ------------------------- *)
+      Ψ ;; (w , AImp A B) :: Γ ⊢ Δ
+
+    | DImpR Ψ Γ Δ w A B :
+      Ψ ;; (w, A) :: Γ ⊢ (w, B) :: Δ ->
+      (* ------------------------- *)
+      Ψ ;; Γ ⊢ (w , AImp A B) :: Δ
+
+    | DStarL Ψ Γ Δ x y z A B :
+      (x ; y ▻ z) ::
+        Ψ ;;
+      (x , A) :: (y , B) :: Γ
+        ⊢ Δ ->
       (* ------------------------------ *)
       Ψ ;; (z, AStar A B) :: Γ ⊢ Δ
 
-    | DWandR z Ψ Γ A B Δ :
-      (LVar var_zero ; shiftL (shiftL z) ▻ LVar (Some var_zero : fin (S (S n)))) :: (shiftTAtoms (shiftTAtoms Ψ)) ;; (LVar var_zero, A)::(shiftHyps (shiftHyps Γ)) ⊢ (LVar (Some var_zero : fin (S (S n))), B) :: (shiftHyps (shiftHyps Δ)) ->
+    | DWandR x y z Ψ Γ A B Δ :
+      (x ; z ▻ y) :: Ψ ;; (x, A)::Γ ⊢ (y, B) :: Δ ->
       (* ----------------------------------- *)
       Ψ ;; Γ ⊢ (z, AWand A B) :: Δ
 
@@ -157,52 +136,90 @@ Arguments EAdd {n}.
     (* --------------------- *)
       (x ; y ▻ z) :: Ψ ;; (y , AWand A B) :: Γ ⊢ Δ
 
+    (* ---------- Structural rules ---------------------- *)
+    | DE x y z Ψ Γ Δ :
+      (y ; x ▻ z) :: (x ; y ▻ z) :: Ψ ;; Γ  ⊢ Δ ->
+      (* ---------------------------------------- *)
+      (x ; y ▻ z) :: Ψ ;; Γ ⊢ Δ
+
+    | DA u w y v x z Ψ Γ Δ :
+      (u ; w ▻ z) :: (y ; v ▻ w) :: (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ ->
+      (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ
+
+
     where "Ψ ;; Γ ⊢ Δ" := (Deriv Ψ Γ Δ).
 
-    Fixpoint denoteTernaries {n} (ρ : fin n -> T) Ψ:=
+    Fixpoint denoteTernaries Ψ:=
       match Ψ with
       | nil => True
-      | T::Ψ => denoteTernaryRelAtom ρ T /\ denoteTernaries ρ Ψ
+      | T::Ψ => denoteTernaryRelAtom T /\ denoteTernaries Ψ
       end.
 
-    Fixpoint denoteSequentL {n} (ρ : fin n -> T) Γ :=
+    Fixpoint denoteSequentL Γ :=
       match Γ with
       | nil => True
-      | (x , A)::Γ => denoteAssertion A (denoteLabel ρ x) /\ denoteSequentL ρ Γ
+      | (x , A)::Γ => denoteAssertion A (denoteLabel x) /\ denoteSequentL Γ
       end.
 
-    Fixpoint denoteSequentR {n} (ρ : fin n -> T) Δ :=
+    Fixpoint denoteSequentR Δ :=
       match Δ with
       | nil => False
-      | (x , A)::Δ => denoteAssertion A (denoteLabel ρ x) \/ denoteSequentR ρ Δ
+      | (x , A)::Δ => denoteAssertion A (denoteLabel x) \/ denoteSequentR Δ
       end.
 
-    Definition SemDeriv {n} Ψ Γ Δ : Prop :=
-      forall (ρ : fin n -> T), denoteTernaries ρ Ψ /\ denoteSequentL ρ Γ -> denoteSequentR ρ Δ.
+    Definition SemDeriv Ψ Γ Δ : Prop :=
+      denoteTernaries Ψ /\ denoteSequentL Γ -> denoteSequentR Δ.
 
     Notation "Ψ ;, Γ ⊨ Δ" := (SemDeriv Ψ Γ Δ) (at level 70, no associativity).
 
-    Lemma DId_sound {n} (Ψ : list (TernaryRelAtom n)) w p Γ Δ :
+    Lemma DId_sound Ψ w p Γ Δ :
     (* ------------------- *)
       Ψ ;, (w , AVar p)::Γ ⊨ (w , AVar p)::Δ.
     Proof.
-      move => ρ //=. tauto.
+      move => //=. tauto.
     Qed.
 
-    Lemma DEmpL_sound {n} w (Ψ : list (TernaryRelAtom n)) Γ Δ :
+    Lemma DEmpL_sound w (Ψ : list (TernaryRelAtom)) Γ Δ :
       IsZero w :: Ψ ;, Γ ⊨ Δ ->
       (* ------------------------- *)
       Ψ ;, (w , AEmp)::Γ ⊨ Δ.
     Proof.
-      rewrite /SemDeriv => //= h ρ [h0[h1 h2]].
+      rewrite /SemDeriv => //= h [h0[h1 h2]].
       apply h => {h}.
       repeat split => //.
       - rewrite h1. by rewrite left_id.
       - apply valid_unit.
     Qed.
 
-    Theorem soundness {n} (Ψ : list (TernaryRelAtom n)) Γ Δ :
+    (* DCut is admissible, but it's nice to include it *)
+    Lemma DCut_sound Ψ Ψ' Γ Δ Γ' Δ' x A :
+      Ψ ;, Γ ⊨ (x, A) :: Δ ->
+      Ψ' ;, (x, A) :: Γ' ⊨ Δ' ->
+    (* --------------------------- *)
+      Ψ ++ Ψ' ;, Γ ++ Γ' ⊨ Δ ++ Δ'.
+    Proof.
+      rewrite /SemDeriv => //= h1 h2.
+      (* Need to show that denote respects append *)
+    Admitted.
+
+    Lemma DBotL_sound Ψ Γ Δ w :
+    (* -------------------------- *)
+      Ψ ;, (w , ABot)::Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv => //=. tauto.
+    Qed.
+
+    Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
+    Proof.
+      move => h.
+      (* Same as induction h *)
+      elim : Ψ Γ Δ / h.
+      - auto using DId_sound.
+      - eauto using DCut_sound.
+      - auto using DBotL_sound.
+      - auto using DEmpL_sound.
+     (* ... *)
     Admitted.
 
     End LabeledSeqCalculus.
