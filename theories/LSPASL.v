@@ -47,17 +47,26 @@ Require Export SepAlg.
     | AStar (P Q : Assertion)
     | AWand (P Q : Assertion).
 
+    Definition stop (_ : T) := True.
+    Definition sbot (_ : T) := False.
+    Definition sand P Q (a : T) := P a /\ Q a.
+    Definition sor P Q (a : T) := P a \/ Q a.
+    Definition simp P Q (a : T) : Prop := P a -> Q a.
+    Definition semp (a : T) := a = unit_op.
+    Definition sstar P Q (c : T) : Prop := exists a b, valid_op (a \+ b) /\ a \+ b = c /\ P a /\ Q b.
+    Definition swand P Q (c : T) : Prop := forall a, P a -> Q (a \+ c).
+
     Fixpoint denoteAssertion P : T -> Prop  :=
       match P with
       | AVar p => p
-      | ATop => fun _ => True
-      | ABot => fun _ => False
-      | AAnd P Q => fun a => denoteAssertion P a /\ denoteAssertion Q a
-      | AOr P Q => fun a => denoteAssertion P a \/ denoteAssertion Q a
-      | AImp P Q => fun a => denoteAssertion P a -> denoteAssertion Q a
-      | AEmp => fun a => a = unit_op
-      | AStar P Q => fun c => exists a b, valid_op (a \+ b) /\ a \+ b = c /\ denoteAssertion P a /\ denoteAssertion P b
-      | AWand P Q => fun c => forall a, denoteAssertion P a -> denoteAssertion Q (a \+ c)
+      | ATop => stop
+      | ABot => sbot
+      | AAnd P Q => sand (denoteAssertion P) (denoteAssertion Q)
+      | AOr P Q => sor (denoteAssertion P) (denoteAssertion Q)
+      | AImp P Q => simp (denoteAssertion P) (denoteAssertion Q)
+      | AEmp => semp
+      | AStar P Q => sstar (denoteAssertion P) (denoteAssertion Q)
+      | AWand P Q => swand (denoteAssertion P) (denoteAssertion Q)
       end.
 
     Reserved Notation "Ψ ;; Γ ⊢ Δ" (at level 90 , no associativity).
@@ -191,6 +200,17 @@ Require Export SepAlg.
       - apply valid_unit.
     Qed.
 
+    Lemma DEmpL_complete w (Ψ : list (TernaryRelAtom)) Γ Δ :
+      Ψ ;, (w , AEmp)::Γ ⊨ Δ ->
+      IsZero w :: Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv => //= h h1.
+      apply h.
+      repeat split; try tauto.
+      rewrite comm left_id in h1.
+      tauto.
+    Qed.
+
     (* DCut is admissible, but it's nice to include it *)
     Lemma DCut_sound Ψ Ψ' Γ Δ Γ' Δ' x A :
       Ψ ;, Γ ⊨ (x, A) :: Δ ->
@@ -206,7 +226,7 @@ Require Export SepAlg.
     (* -------------------------- *)
       Ψ ;, (w , ABot)::Γ ⊨ Δ.
     Proof.
-      rewrite /SemDeriv => //=. tauto.
+      rewrite /SemDeriv //= /sbot . tauto.
     Qed.
 
     Theorem soundness Ψ Γ Δ :
@@ -222,4 +242,4 @@ Require Export SepAlg.
      (* ... *)
     Admitted.
 
-    End LabeledSeqCalculus.
+  End LabeledSeqCalculus.
