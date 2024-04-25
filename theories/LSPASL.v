@@ -11,7 +11,8 @@ Require Export SepAlg.
 
     Variant Label := LVar (p : T) | LUnit.
 
-    Variant TernaryRelAtom : Set :=  TRA : Label ->  Label -> Label -> TernaryRelAtom.
+    Variant TernaryRelAtom : Set :=
+      TRA : Label ->  Label -> Label -> TernaryRelAtom.
     Notation " a ; b ▻ c " := (TRA a b c) (at level 70, no associativity).
 
     Definition denoteLabel (l : Label) :=
@@ -176,6 +177,51 @@ Require Export SepAlg.
       | (x , A)::Δ => denoteAssertion A (denoteLabel x) \/ denoteSequentR Δ
       end.
 
+    Lemma denoteTernaries_app: forall A B,
+        denoteTernaries (A ++ B) <-> denoteTernaries A /\ denoteTernaries B.
+    Proof.
+      intros A B.
+      remember (A ++ B) as AB.
+      generalize dependent B.
+      generalize dependent A.
+      induction AB; intros; symmetry in HeqAB.      
+      - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
+      - apply app_eq_cons in HeqAB.        
+        destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
+        + specialize (IHAB nil AB); cbn in *; intuition.
+        + specialize (IHAB tsA B); cbn in *; intuition.
+    Qed.
+    
+    Lemma denoteSequentL_app: forall A B,
+        denoteSequentL (A ++ B) <-> denoteSequentL A /\ denoteSequentL B.
+    Proof.
+      intros A B.
+      remember (A ++ B) as AB.
+      generalize dependent B.
+      generalize dependent A.
+      induction AB; intros; symmetry in HeqAB.      
+      - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
+      - apply app_eq_cons in HeqAB.        
+        destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
+        + specialize (IHAB nil AB); cbn in *; intuition.
+        + specialize (IHAB tsA B); cbn in *; intuition.
+    Qed.
+
+    Lemma denoteSequentR_app: forall A B,
+        denoteSequentR (A ++ B) <-> denoteSequentR A \/ denoteSequentR B.
+    Proof.
+      intros A B.
+      remember (A ++ B) as AB.
+      generalize dependent B.
+      generalize dependent A.
+      induction AB; intros; symmetry in HeqAB.      
+      - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
+      - apply app_eq_cons in HeqAB.        
+        destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
+        + specialize (IHAB nil AB); cbn in *; intuition.
+        + specialize (IHAB tsA B); cbn in *; intuition.
+    Qed.
+    
     Definition SemDeriv Ψ Γ Δ : Prop :=
       denoteTernaries Ψ /\ denoteSequentL Γ -> denoteSequentR Δ.
 
@@ -219,8 +265,12 @@ Require Export SepAlg.
       Ψ ++ Ψ' ;, Γ ++ Γ' ⊨ Δ ++ Δ'.
     Proof.
       rewrite /SemDeriv => //= h1 h2.
-      (* Need to show that denote respects append *)
-    Admitted.
+      intros (? & ?); auto.
+      apply denoteTernaries_app in H.
+      apply denoteSequentR_app.
+      apply denoteSequentL_app in H0.
+      intuition.
+    Qed.
 
     Lemma DBotL_sound Ψ Γ Δ w :
     (* -------------------------- *)
@@ -238,6 +288,12 @@ Require Export SepAlg.
       Ψ ;, (z, AStar A B) :: Γ ⊨ Δ.
     Proof.
       unfold SemDeriv. simpl. unfold sstar.
+      intros ? (? & (a & b & ? & ? & ? & ?) & ?); subst.      
+      apply H; repeat split; 
+        rewrite <- ?H2; try tauto.
+      - (* LEF: I don't think [join_cancelL] is enough to prove this,
+         maybe something is missing. *)
+        admit.
     Admitted.
 
     Theorem soundness Ψ Γ Δ :

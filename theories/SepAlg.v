@@ -20,7 +20,8 @@ Parameter assoc : forall a b c, (a \+ b) \+ c = a \+ (b \+ c).
 
 Parameter left_id : forall a, a \+ unit_op = a.
 
-Parameter valid_monoL : forall a b, valid_op (a \+ b) -> valid_op a.
+Parameter valid_monoL : forall a b,
+    valid_op (a \+ b) -> valid_op a.
 
 Parameter valid_unit : valid_op unit_op.
 
