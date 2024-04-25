@@ -4,6 +4,8 @@ Require Import Logic.Classical_Prop.
 
   Module Type LabeledSeqCalculus
     (Export sepalg : SepAlg).
+    Module sepalg_facts := SepAlgFacts sepalg.
+    Import sepalg_facts.
     Local Open Scope sepscope.
 
     Inductive Exp :=
@@ -152,8 +154,8 @@ Require Import Logic.Classical_Prop.
       (* ---------------------------------------- *)
       (x ; y ▻ z) :: Ψ ;; Γ ⊢ Δ
 
-    | DA u w y v x z Ψ Γ Δ :
-      (u ; w ▻ z) :: (y ; v ▻ w) :: (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ ->
+    | DA u y v x z Ψ Γ Δ :
+      (forall w, (u ; w ▻ z) :: (y ; v ▻ w) :: (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ) ->
       (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ
 
 
@@ -359,14 +361,66 @@ Require Import Logic.Classical_Prop.
       repeat split => //.
     Qed.
 
-    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound : sound.
+    Lemma DStarR_sound x y z Ψ Γ A B Δ :
+      (x ; y ▻ z) :: Ψ ;, Γ ⊨ (x, A) :: (z , AStar A B) :: Δ ->
+      (x ; y ▻ z) :: Ψ ;, Γ ⊨ (y, B) :: (z , AStar A B) :: Δ ->
+      (* ---------------------------- *)
+      (x ; y ▻ z) :: Ψ ;, Γ ⊨ (z,AStar A B) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= => h0 h1 h2.
+      rewrite /sstar in h0 h1 h2 *. firstorder.
+    Qed.
+
+    Lemma DWandL_sound x y z Ψ Γ A B Δ :
+      (x ; y ▻ z) :: Ψ ;, (y , AWand A B) :: Γ ⊨ (x, A)::Δ ->
+      (x ; y ▻ z) :: Ψ ;, (y , AWand A B) :: (z , B) :: Γ ⊨ Δ ->
+    (* --------------------- *)
+      (x ; y ▻ z) :: Ψ ;, (y , AWand A B) :: Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //= /swand.
+      firstorder.
+      apply H0 => //.
+      rewrite <- H1.
+      apply H2 => //.
+      congruence.
+    Qed.
+
+    Lemma DA_sound u y v x z Ψ Γ Δ :
+      (forall w, (u ; w ▻ z) :: (y ; v ▻ w) :: (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;, Γ ⊨ Δ) ->
+      (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //= => h.
+      firstorder.
+      apply h with (w := LVar (denoteLabel v \+ denoteLabel y)).
+      move => [:f].
+      repeat split => //=.
+      abstract : f.
+      rewrite -assoc.
+      congruence.
+      apply comm.
+      rewrite -f in H4.
+      move : H4.
+      apply valid_monoR.
+    Qed.
+
+    Lemma DE_sound x y z Ψ Γ Δ :
+      (y ; x ▻ z) :: (x ; y ▻ z) :: Ψ ;, Γ  ⊨ Δ ->
+      (* ---------------------------------------- *)
+      (x ; y ▻ z) :: Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //=.
+      firstorder.
+      apply : H => //.
+      by rewrite comm.
+    Qed.
+
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound : sound.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
     Proof.
       move => h.
-      (* Same as induction h *)
       elim : Ψ Γ Δ / h; eauto with sound.
-    Admitted.
+    Qed.
 
   End LabeledSeqCalculus.
