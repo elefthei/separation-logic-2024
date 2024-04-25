@@ -1,4 +1,6 @@
 Require Export SepAlg.
+Require Import Lists.List.
+Require Import Logic.Classical_Prop.
 
   Module Type LabeledSeqCalculus
     (Export sepalg : SepAlg).
@@ -184,14 +186,14 @@ Require Export SepAlg.
       remember (A ++ B) as AB.
       generalize dependent B.
       generalize dependent A.
-      induction AB; intros; symmetry in HeqAB.      
+      induction AB; intros; symmetry in HeqAB.
       - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
-      - apply app_eq_cons in HeqAB.        
+      - apply app_eq_cons in HeqAB.
         destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
         + specialize (IHAB nil AB); cbn in *; intuition.
         + specialize (IHAB tsA B); cbn in *; intuition.
     Qed.
-    
+
     Lemma denoteSequentL_app: forall A B,
         denoteSequentL (A ++ B) <-> denoteSequentL A /\ denoteSequentL B.
     Proof.
@@ -199,9 +201,9 @@ Require Export SepAlg.
       remember (A ++ B) as AB.
       generalize dependent B.
       generalize dependent A.
-      induction AB; intros; symmetry in HeqAB.      
+      induction AB; intros; symmetry in HeqAB.
       - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
-      - apply app_eq_cons in HeqAB.        
+      - apply app_eq_cons in HeqAB.
         destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
         + specialize (IHAB nil AB); cbn in *; intuition.
         + specialize (IHAB tsA B); cbn in *; intuition.
@@ -214,14 +216,14 @@ Require Export SepAlg.
       remember (A ++ B) as AB.
       generalize dependent B.
       generalize dependent A.
-      induction AB; intros; symmetry in HeqAB.      
+      induction AB; intros; symmetry in HeqAB.
       - apply app_eq_nil in HeqAB as (-> & ->); cbn; intuition.
-      - apply app_eq_cons in HeqAB.        
+      - apply app_eq_cons in HeqAB.
         destruct HeqAB as [(-> & ->) | (tsA & -> & ->)], a.
         + specialize (IHAB nil AB); cbn in *; intuition.
         + specialize (IHAB tsA B); cbn in *; intuition.
     Qed.
-    
+
     Definition SemDeriv Ψ Γ Δ : Prop :=
       denoteTernaries Ψ /\ denoteSequentL Γ -> denoteSequentR Δ.
 
@@ -279,6 +281,52 @@ Require Export SepAlg.
       rewrite /SemDeriv //= /sbot . tauto.
     Qed.
 
+    Lemma DTopR_sound  Ψ Γ w  Δ :
+      Ψ ;, Γ ⊨ (w, ATop) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= /stop. tauto.
+    Qed.
+
+    Lemma DEmpR_sound Ψ Γ Δ :
+      Ψ ;, Γ ⊨ (LUnit, AEmp) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= /semp. tauto.
+    Qed.
+
+    Lemma DAndL_sound Ψ Γ Δ w A B :
+      Ψ ;, (w , A) :: (w , B) :: Γ ⊨ Δ ->
+      (* ---------------------------- *)
+      Ψ ;, (w , AAnd A B ) :: Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //= /sand. tauto.
+    Qed.
+
+    Lemma DAndR_sound Ψ Γ Δ w A B :
+      Ψ ;, Γ ⊨ (w , A) :: Δ ->
+      Ψ ;, Γ ⊨ (w , B) :: Δ ->
+      (* ---------------------------- *)
+      Ψ ;, Γ ⊨ (w , AAnd A B ) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= /sand. tauto.
+    Qed.
+
+    Lemma DImpL_sound Ψ Γ Δ w A B :
+      Ψ ;, Γ ⊨ (w, A) :: Δ ->
+      Ψ ;, (w, B) :: Γ ⊨ Δ ->
+      (* ------------------------- *)
+      Ψ ;, (w , AImp A B) :: Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //= /simp. tauto.
+    Qed.
+
+    Lemma DImpR_sound Ψ Γ Δ w A B :
+      Ψ ;, (w, A) :: Γ ⊨ (w, B) :: Δ ->
+      (* ------------------------- *)
+      Ψ ;, Γ ⊨ (w , AImp A B) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= /simp /imply_to_or. tauto.
+    Qed.
+
     Lemma DStarL_sound Ψ Γ Δ x y z A B :
       (x ; y ▻ z) ::
         Ψ ;,
@@ -288,25 +336,22 @@ Require Export SepAlg.
       Ψ ;, (z, AStar A B) :: Γ ⊨ Δ.
     Proof.
       unfold SemDeriv. simpl. unfold sstar.
-      intros ? (? & (a & b & ? & ? & ? & ?) & ?); subst.      
-      apply H; repeat split; 
+      intros ? (? & (a & b & ? & ? & ? & ?) & ?); subst.
+      apply H; repeat split;
         rewrite <- ?H2; try tauto.
       - (* LEF: I don't think [join_cancelL] is enough to prove this,
          maybe something is missing. *)
         admit.
     Admitted.
 
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound : sound.
+
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
     Proof.
       move => h.
       (* Same as induction h *)
-      elim : Ψ Γ Δ / h.
-      - auto using DId_sound.
-      - eauto using DCut_sound.
-      - auto using DBotL_sound.
-      - auto using DEmpL_sound.
-     (* ... *)
+      elim : Ψ Γ Δ / h; eauto with sound.
     Admitted.
 
   End LabeledSeqCalculus.
