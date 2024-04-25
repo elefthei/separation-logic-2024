@@ -123,11 +123,8 @@ Require Import Logic.Classical_Prop.
       (* ------------------------- *)
       Ψ ;; Γ ⊢ (w , AImp A B) :: Δ
 
-    | DStarL Ψ Γ Δ x y z A B :
-      (x ; y ▻ z) ::
-        Ψ ;;
-      (x , A) :: (y , B) :: Γ
-        ⊢ Δ ->
+    | DStarL Ψ Γ Δ z A B :
+      (forall x y, (x ; y ▻ z) :: Ψ ;; (x , A) :: (y , B) :: Γ ⊢ Δ) ->
       (* ------------------------------ *)
       Ψ ;; (z, AStar A B) :: Γ ⊢ Δ
 
@@ -327,24 +324,20 @@ Require Import Logic.Classical_Prop.
       rewrite /SemDeriv //= /simp /imply_to_or. tauto.
     Qed.
 
-    Lemma DStarL_sound Ψ Γ Δ x y z A B :
-      (x ; y ▻ z) ::
-        Ψ ;,
-      (x , A) :: (y , B) :: Γ
-        ⊨ Δ ->
+    Lemma DStarL_sound Ψ Γ Δ  z A B :
+      (forall x y, (x ; y ▻ z) :: Ψ ;, (x , A) :: (y , B) :: Γ  ⊨ Δ) ->
       (* ------------------------------ *)
       Ψ ;, (z, AStar A B) :: Γ ⊨ Δ.
     Proof.
       unfold SemDeriv. simpl. unfold sstar.
-      intros ? (? & (a & b & ? & ? & ? & ?) & ?); subst.
-      apply H; repeat split;
-        rewrite <- ?H2; try tauto.
-      - (* LEF: I don't think [join_cancelL] is enough to prove this,
-         maybe something is missing. *)
-        admit.
-    Admitted.
+      move => h0 [h1 [[a [b [h2 [h3 [h4 h5]]]]] h6]].
+      apply : h0.
+      repeat split => //; try intuition congruence; eauto.
+      change (a \+ b) with (denoteLabel (LVar a) \+ denoteLabel (LVar b)) in h3.
+      apply h3. auto. auto.
+    Qed.
 
-    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound : sound.
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound : sound.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
