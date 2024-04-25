@@ -50,18 +50,19 @@ Require Import Logic.Classical_Prop.
     | AStar (P Q : Assertion)
     | AWand (P Q : Assertion).
 
+    Definition svar P : T ->  Prop := P.
     Definition stop (_ : T) := True.
     Definition sbot (_ : T) := False.
     Definition sand P Q (a : T) := P a /\ Q a.
     Definition sor P Q (a : T) := P a \/ Q a.
-    Definition simp P Q (a : T) : Prop := P a -> Q a.
+    Definition simp P Q (a : T) : Prop := (P a -> Q a).
     Definition semp (a : T) := a = unit_op.
-    Definition sstar P Q (c : T) : Prop := exists a b, valid_op (a \+ b) /\ a \+ b = c /\ P a /\ Q b.
-    Definition swand P Q (c : T) : Prop := forall a, P a -> Q (a \+ c).
+    Definition sstar P Q (c : T) : Prop := exists a b, a \+ b = c /\ P a /\ Q b /\ valid_op c.
+    Definition swand P Q (c : T) : Prop := forall a, P a -> valid_op (a \+ c) -> Q (a \+ c).
 
     Fixpoint denoteAssertion P : T -> Prop  :=
       match P with
-      | AVar p => p
+      | AVar p => svar p
       | ATop => stop
       | ABot => sbot
       | AAnd P Q => sand (denoteAssertion P) (denoteAssertion Q)
@@ -128,8 +129,8 @@ Require Import Logic.Classical_Prop.
       (* ------------------------------ *)
       Ψ ;; (z, AStar A B) :: Γ ⊢ Δ
 
-    | DWandR x y z Ψ Γ A B Δ :
-      (x ; z ▻ y) :: Ψ ;; (x, A)::Γ ⊢ (y, B) :: Δ ->
+    | DWandR z Ψ Γ A B Δ :
+      (forall x y, (x ; z ▻ y) :: Ψ ;; (x, A)::Γ ⊢ (y, B) :: Δ) ->
       (* ----------------------------------- *)
       Ψ ;; Γ ⊢ (z, AWand A B) :: Δ
 
@@ -330,14 +331,35 @@ Require Import Logic.Classical_Prop.
       Ψ ;, (z, AStar A B) :: Γ ⊨ Δ.
     Proof.
       unfold SemDeriv. simpl. unfold sstar.
-      move => h0 [h1 [[a [b [h2 [h3 [h4 h5]]]]] h6]].
+      move => h0 [h1 [[a [b [h2 [h3 h4]]]] h5]].
       apply : h0.
       repeat split => //; try intuition congruence; eauto.
-      change (a \+ b) with (denoteLabel (LVar a) \+ denoteLabel (LVar b)) in h3.
-      apply h3. auto. auto.
+      change (a \+ b) with (denoteLabel (LVar a) \+ denoteLabel (LVar b)) in h2.
+      apply h2. auto.  simpl; tauto.
     Qed.
 
-    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound : sound.
+    Lemma DWandR_sound z Ψ Γ A B Δ :
+      (forall x y, (x ; z ▻ y) :: Ψ ;, (x, A)::Γ ⊨ (y, B) :: Δ) ->
+      (* ----------------------------------- *)
+      Ψ ;, Γ ⊨ (z, AWand A B) :: Δ.
+    Proof.
+      rewrite /SemDeriv //= => h0 [h1 h2].
+      rewrite /swand.
+      move : (classic (denoteSequentR Δ)).
+      case; first by tauto.
+      move => ?.
+      have {}h0 : forall x y : Label,
+       ((denoteLabel x \+ denoteLabel z = denoteLabel y /\ valid_op (denoteLabel y)) /\ denoteTernaries Ψ) /\
+       denoteAssertion A (denoteLabel x) /\ denoteSequentL Γ ->
+       denoteAssertion B (denoteLabel y) by firstorder.
+      left.
+      move => //a h h'.
+      move /(_ (LVar a) (LVar (a \+ denoteLabel z))) in h0. simpl in h0.
+      apply : h0.
+      repeat split => //.
+    Qed.
+
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound : sound.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
