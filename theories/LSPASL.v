@@ -1,6 +1,7 @@
 Require Export SepAlg.
 Require Import Lists.List.
 Require Import Logic.Classical_Prop.
+Require Import Sorting.Permutation.
 
   Module Type LabeledSeqCalculus
     (Export sepalg : SepAlg).
@@ -168,6 +169,20 @@ Require Import Logic.Classical_Prop.
       (forall w, (x ; w ▻ x) :: (y ; w ▻ y) :: (x ; y ▻ x) :: Ψ ;; Γ ⊢ Δ) ->
     (* ----------------------- *)
       (x ; y ▻ x) :: Ψ ;; Γ ⊢ Δ
+
+    | DEq w w' Ψ Γ Δ :
+      w = w' ->
+      (LUnit ; w' ▻ w') :: Ψ ;; Γ ⊢ Δ ->
+      (* ------------------------- *)
+      (LUnit ; w ▻ w') :: Ψ ;; Γ ⊢ Δ
+
+    | DPerm Ψ Γ Δ Ψ' Γ' Δ' :
+      Permutation Ψ Ψ' ->
+      Permutation Γ Γ' ->
+      Permutation Δ Δ' ->
+      Ψ' ;; Γ' ⊢ Δ' ->
+      (* -------------- *)
+      Ψ ;; Γ ⊢ Δ
 
     where "Ψ ;; Γ ⊢ Δ" := (Deriv Ψ Γ Δ).
 
@@ -450,7 +465,25 @@ Require Import Logic.Classical_Prop.
       apply valid_monoR.
     Qed.
 
-    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound : sound.
+    Lemma DEq_sound w w' Ψ Γ Δ :
+      w = w' ->
+      (LUnit ; w' ▻ w') :: Ψ ;, Γ ⊨ Δ ->
+      (* ------------------------- *)
+      (LUnit ; w ▻ w') :: Ψ ;, Γ ⊨ Δ.
+    Proof. by move => ->. Qed.
+
+    Lemma DPerm_sound Ψ Γ Δ Ψ' Γ' Δ' :
+      Permutation Ψ Ψ' ->
+      Permutation Γ Γ' ->
+      Permutation Δ Δ' ->
+      Ψ' ;, Γ' ⊨ Δ' ->
+      (* -------------- *)
+      Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv => hΨ hΓ hΔ.
+    Admitted.
+
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound DEq_sound DPerm_sound : sound.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
