@@ -154,10 +154,20 @@ Require Import Logic.Classical_Prop.
       (* ---------------------------------------- *)
       (x ; y ▻ z) :: Ψ ;; Γ ⊢ Δ
 
+    | DU x Ψ Γ Δ :
+      valid_op (denoteLabel x) ->
+      (x ; LUnit ▻ x) :: Ψ ;; Γ ⊢ Δ ->
+    (* --------------------- *)
+      Ψ ;; Γ ⊢ Δ
+
     | DA u y v x z Ψ Γ Δ :
       (forall w, (u ; w ▻ z) :: (y ; v ▻ w) :: (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ) ->
       (x ; y ▻ z) :: (u ; v ▻ x) :: Ψ ;; Γ ⊢ Δ
 
+    | DAC x y Ψ Γ Δ :
+      (forall w, (x ; w ▻ x) :: (y ; w ▻ y) :: (x ; y ▻ x) :: Ψ ;; Γ ⊢ Δ) ->
+    (* ----------------------- *)
+      (x ; y ▻ x) :: Ψ ;; Γ ⊢ Δ
 
     where "Ψ ;; Γ ⊢ Δ" := (Deriv Ψ Γ Δ).
 
@@ -414,7 +424,33 @@ Require Import Logic.Classical_Prop.
       by rewrite comm.
     Qed.
 
-    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound : sound.
+    Lemma DU_sound x Ψ Γ Δ :
+      valid_op (denoteLabel x) ->
+      (x ; LUnit ▻ x) :: Ψ ;, Γ ⊨ Δ ->
+    (* --------------------- *)
+      Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //=.
+      firstorder.
+      apply H0=>//.
+      apply left_id.
+    Qed.
+
+    Lemma DAC_sound x y Ψ Γ Δ :
+      (forall w, (x ; w ▻ x) :: (y ; w ▻ y) :: (x ; y ▻ x) :: Ψ ;, Γ ⊨ Δ) ->
+    (* ----------------------- *)
+      (x ; y ▻ x) :: Ψ ;, Γ ⊨ Δ.
+    Proof.
+      rewrite /SemDeriv //= => h.
+      firstorder.
+      apply (h LUnit) => //=. firstorder.
+      apply left_id.
+      apply left_id.
+      move : H2. rewrite -H.
+      apply valid_monoR.
+    Qed.
+
+    #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound : sound.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.
