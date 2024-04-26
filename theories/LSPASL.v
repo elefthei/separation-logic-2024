@@ -14,17 +14,9 @@ Require Import Sorting.Permutation.
     | EUnit
     | EAdd (a b : Exp).
 
-    Variant Label := LVar (p : T) | LUnit.
-
     Variant TernaryRelAtom : Set :=
-      TRA : Label ->  Label -> Label -> TernaryRelAtom.
+      TRA : T ->  T -> T -> TernaryRelAtom.
     Notation " a ; b ▻ c " := (TRA a b c) (at level 70, no associativity).
-
-    Definition denoteLabel (l : Label) :=
-      match l with
-      | LVar p => p
-      | LUnit => unit_op
-      end.
 
     Fixpoint denoteExp (t : Exp) : T :=
       match t with
@@ -35,10 +27,10 @@ Require Import Sorting.Permutation.
 
     Definition denoteTernaryRelAtom (t : TernaryRelAtom) : Prop :=
       match t with
-      |  a ; b ▻ c  => denoteLabel a \+ denoteLabel b = denoteLabel c  /\ valid_op (denoteLabel c)
+      |  a ; b ▻ c  => a \+ b = c  /\ valid_op c
       end.
 
-    Notation IsZero a := (LUnit ; a ▻ LUnit).
+    Notation IsZero a := (unit_op ; a ▻ unit_op).
 
     (* The Assertion variables are shallow-embedded, unlike the Exp variables *)
     Inductive Assertion : Type :=
@@ -79,7 +71,7 @@ Require Import Sorting.Permutation.
     Reserved Notation "Ψ ;; Γ ⊢ Δ" (at level 90 , no associativity).
 
     Inductive Deriv :
-      list TernaryRelAtom -> list (Label * Assertion) -> list (Label * Assertion) -> Prop :=
+      list TernaryRelAtom -> list (T * Assertion) -> list (T * Assertion) -> Prop :=
     | DId Ψ w p Γ Δ :
     (* ------------------- *)
       Ψ ;; (w , AVar p)::Γ ⊢ (w , AVar p)::Δ
@@ -103,7 +95,7 @@ Require Import Sorting.Permutation.
       Ψ ;; Γ ⊢ (w, ATop) :: Δ
 
     | DEmpR Ψ Γ Δ :
-      Ψ ;; Γ ⊢ (LUnit, AEmp) :: Δ
+      Ψ ;; Γ ⊢ (unit_op, AEmp) :: Δ
 
     | DAndL Ψ Γ Δ w A B :
       Ψ ;; (w , A) :: (w , B) :: Γ ⊢ Δ ->
@@ -156,8 +148,8 @@ Require Import Sorting.Permutation.
       (x ; y ▻ z) :: Ψ ;; Γ ⊢ Δ
 
     | DU x Ψ Γ Δ :
-      valid_op (denoteLabel x) ->
-      (x ; LUnit ▻ x) :: Ψ ;; Γ ⊢ Δ ->
+      valid_op x ->
+      (x ; unit_op ▻ x) :: Ψ ;; Γ ⊢ Δ ->
     (* --------------------- *)
       Ψ ;; Γ ⊢ Δ
 
@@ -172,9 +164,9 @@ Require Import Sorting.Permutation.
 
     | DEq w w' Ψ Γ Δ :
       w = w' ->
-      (LUnit ; w' ▻ w') :: Ψ ;; Γ ⊢ Δ ->
+      (unit_op ; w' ▻ w') :: Ψ ;; Γ ⊢ Δ ->
       (* ------------------------- *)
-      (LUnit ; w ▻ w') :: Ψ ;; Γ ⊢ Δ
+      (unit_op ; w ▻ w') :: Ψ ;; Γ ⊢ Δ
 
     | DPerm Ψ Γ Δ Ψ' Γ' Δ' :
       Permutation Ψ Ψ' ->
@@ -195,13 +187,13 @@ Require Import Sorting.Permutation.
     Fixpoint denoteSequentL Γ :=
       match Γ with
       | nil => True
-      | (x , A)::Γ => denoteAssertion A (denoteLabel x) /\ denoteSequentL Γ
+      | (x , A)::Γ => denoteAssertion A x /\ denoteSequentL Γ
       end.
 
     Fixpoint denoteSequentR Δ :=
       match Δ with
       | nil => False
-      | (x , A)::Δ => denoteAssertion A (denoteLabel x) \/ denoteSequentR Δ
+      | (x , A)::Δ => denoteAssertion A x \/ denoteSequentR Δ
       end.
 
     Lemma denoteTernaries_app: forall A B,
@@ -354,7 +346,7 @@ Require Import Sorting.Permutation.
     Qed.
 
     Lemma DEmpR_sound Ψ Γ Δ :
-      Ψ ;, Γ ⊨ (LUnit, AEmp) :: Δ.
+      Ψ ;, Γ ⊨ (unit_op, AEmp) :: Δ.
     Proof.
       rewrite /SemDeriv //= /semp. tauto.
     Qed.
@@ -402,7 +394,6 @@ Require Import Sorting.Permutation.
       move => h0 [h1 [[a [b [h2 [h3 h4]]]] h5]].
       apply : h0.
       repeat split => //; try intuition congruence; eauto.
-      change (a \+ b) with (denoteLabel (LVar a) \+ denoteLabel (LVar b)) in h2.
       apply h2. auto.  simpl; tauto.
     Qed.
 
@@ -416,13 +407,13 @@ Require Import Sorting.Permutation.
       move : (classic (denoteSequentR Δ)).
       case; first by tauto.
       move => ?.
-      have {}h0 : forall x y : Label,
-       ((denoteLabel x \+ denoteLabel z = denoteLabel y /\ valid_op (denoteLabel y)) /\ denoteTernaries Ψ) /\
-       denoteAssertion A (denoteLabel x) /\ denoteSequentL Γ ->
-       denoteAssertion B (denoteLabel y) by firstorder.
+      have {}h0 : forall x y : T,
+       ((x \+ z = y /\ valid_op (y)) /\ denoteTernaries Ψ) /\
+       denoteAssertion A (x) /\ denoteSequentL Γ ->
+       denoteAssertion B (y) by firstorder.
       left.
       move => //a h h'.
-      move /(_ (LVar a) (LVar (a \+ denoteLabel z))) in h0. simpl in h0.
+      move /(_ a (a \+ z)) in h0. simpl in h0.
       apply : h0.
       repeat split => //.
     Qed.
@@ -457,7 +448,7 @@ Require Import Sorting.Permutation.
     Proof.
       rewrite /SemDeriv //= => h.
       firstorder.
-      apply h with (w := LVar (denoteLabel v \+ denoteLabel y)).
+      apply h with (w := v \+  y).
       move => [:f].
       repeat split => //=.
       abstract : f.
@@ -481,8 +472,8 @@ Require Import Sorting.Permutation.
     Qed.
 
     Lemma DU_sound x Ψ Γ Δ :
-      valid_op (denoteLabel x) ->
-      (x ; LUnit ▻ x) :: Ψ ;, Γ ⊨ Δ ->
+      valid_op x ->
+      (x ; unit_op ▻ x) :: Ψ ;, Γ ⊨ Δ ->
     (* --------------------- *)
       Ψ ;, Γ ⊨ Δ.
     Proof.
@@ -499,7 +490,7 @@ Require Import Sorting.Permutation.
     Proof.
       rewrite /SemDeriv //= => h.
       firstorder.
-      apply (h LUnit) => //=. firstorder.
+      apply (h unit_op) => //=. firstorder.
       apply left_id.
       apply left_id.
       move : H2. rewrite -H.
@@ -508,9 +499,9 @@ Require Import Sorting.Permutation.
 
     Lemma DEq_sound w w' Ψ Γ Δ :
       w = w' ->
-      (LUnit ; w' ▻ w') :: Ψ ;, Γ ⊨ Δ ->
+      (unit_op ; w' ▻ w') :: Ψ ;, Γ ⊨ Δ ->
       (* ------------------------- *)
-      (LUnit ; w ▻ w') :: Ψ ;, Γ ⊨ Δ.
+      (unit_op ; w ▻ w') :: Ψ ;, Γ ⊨ Δ.
     Proof. by move => ->. Qed.
 
     Lemma DPerm_sound Ψ Γ Δ Ψ' Γ' Δ' :
