@@ -45,7 +45,6 @@ Require Import Sorting.Permutation.
     | AStar (P Q : Assertion)
     | AWand (P Q : Assertion).
 
-    Definition svar P : T ->  Prop := P.
     Definition stop (_ : T) := True.
     Definition sbot (_ : T) := False.
     Definition sand P Q (a : T) := P a /\ Q a.
@@ -57,7 +56,7 @@ Require Import Sorting.Permutation.
 
     Fixpoint denoteAssertion P : T -> Prop  :=
       match P with
-      | AVar p => svar p
+      | AVar p => p
       | ATop => stop
       | ABot => sbot
       | AAnd P Q => sand (denoteAssertion P) (denoteAssertion Q)
@@ -522,7 +521,17 @@ Require Import Sorting.Permutation.
       now rewrite <- hΨ, <- hΓ.
     Qed.
 
+    Lemma DId' Ψ w p Γ Δ :
+      In (w , AVar p) Γ ->
+      In (w , AVar p) Δ ->
+    (* ------------------- *)
+      Ψ ;; Γ ⊢ Δ.
+    Admitted.
+               
+
     #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound DEq_sound DPerm_sound : sound.
+
+    #[export]Hint Constructors Deriv : core.
 
     Theorem soundness Ψ Γ Δ :
       Ψ ;; Γ ⊢ Δ  ->  Ψ ;, Γ ⊨ Δ.

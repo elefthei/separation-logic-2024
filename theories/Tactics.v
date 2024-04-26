@@ -14,7 +14,7 @@ Module Solver
   Notation "a ∈ A" := (elemIn a A) (at level 70, no associativity).
 
   Ltac2 rec reifyAssertion a :=
-    lazy_match! a with
+    match! a with
     | stop => 'ATop
     | sbot => 'ABot
     | semp => 'AEmp
@@ -38,7 +38,8 @@ Module Solver
         let a := reifyAssertion p in
         let b := reifyAssertion q in
         '(AWand $a $b)
-    | _ => Control.backtrack_tactic_failure "failed to reify assertions"
+    | ?p =>'(AVar $p)
+    | ?x => Control.backtrack_tactic_failure "failed to reify assertions"
     end.
   Local Open Scope sepscope.
 
@@ -77,9 +78,10 @@ Module Solver
 
   Lemma transform_sound (a : Exp) (A : Assertion) :
     valid_op (denoteExp a) ->
-    expToRelAtoms a ;, nil ⊨ ((denoteExp a , A) :: nil) ->
+    expToRelAtoms a ;; nil ⊢ ((denoteExp a , A) :: nil) ->
     denoteExp a ∈ denoteAssertion A.
   Proof.
+    move => + /soundness.
     rewrite /SemDeriv //=.
     move => h h1.
     have := expToRelAtoms_sound a.
@@ -94,5 +96,31 @@ Module Solver
         apply (transform_sound $ar $pr)
     | [|- _] => Control.backtrack_tactic_failure "failed to reify the goal"
     end.
+
+  Lemma ex1 : unit_op ∈ semp.
+  Proof.
+    ltac2:(reifyGoal ()) => //=.
+    apply valid_unit; eauto.
+  Qed.
+
+  Lemma ex2 : unit_op \+ unit_op ∈ sstar semp semp.
+  Proof.
+    ltac2:(reifyGoal ()) => //=.
+    - rewrite left_id. apply valid_unit.
+    - apply DStarR; eauto.
+  Qed.
+
+  Lemma ex3 (a b : T) A B :
+    valid_op (a \+ b) ->
+    (a ; b ▻ a \+ b)::nil ;; (b , AVar B) :: (a , AVar A) :: nil ⊢ (a \+ b , AStar (AVar A) (AVar B)) :: nil ->
+    a ∈ A ->
+    b ∈ B ->
+    a \+ b ∈ sstar A B.
+  Proof.
+    move => h /soundness.
+    rewrite /SemDeriv //=.
+    rewrite /elemIn. tauto.
+  Qed.
+
 
 End Solver.
