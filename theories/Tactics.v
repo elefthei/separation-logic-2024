@@ -105,9 +105,8 @@ Module Solver
 
   Lemma ex2 : unit_op \+ unit_op ∈ sstar semp semp.
   Proof.
-    ltac2:(reifyGoal ()) => //=.
-    - rewrite left_id. apply valid_unit.
-    - apply DStarR; eauto.
+    ltac2:(reifyGoal ()) => //=; last by eauto.
+    rewrite left_id. apply valid_unit.
   Qed.
 
   Lemma ex3 (a b : T) A B :
@@ -121,6 +120,5 @@ Module Solver
     rewrite /SemDeriv //=.
     rewrite /elemIn. tauto.
   Qed.
-
 
 End Solver.
