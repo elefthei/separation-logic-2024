@@ -249,6 +249,47 @@ Require Import Sorting.Permutation.
         + specialize (IHAB tsA B); cbn in *; intuition.
     Qed.
 
+    Lemma denoteSequentL_permutation: forall A B,
+        Permutation A B ->
+        (denoteSequentL A <-> denoteSequentL B).
+    Proof.
+      induction 1; cbn; firstorder; destruct x.
+      - destruct H2; split; auto.
+      - destruct H2; split; auto.
+      - destruct y.
+        destruct H as (? & ? & ?).
+        split; [|split]; auto.
+      - destruct y.
+        destruct H as (? & ? & ?).
+        split; [|split]; auto.
+    Qed.
+
+    Lemma denoteSequentR_permutation: forall A B,
+        Permutation A B ->
+        (denoteSequentR A <-> denoteSequentR B).
+    Proof.
+      induction 1; cbn; firstorder; destruct x.
+      - destruct H2; [left | right]; auto. 
+      - destruct H2; [left | right]; auto. 
+      - destruct y.
+        destruct H as [? | [? | ?]].
+        + now right; left.
+        + now left.
+        + now right; right.
+      - destruct y.
+        destruct H as [? | [? | ?]].
+        + now right; left.
+        + now left.
+        + now right; right.
+    Qed.
+
+    Lemma denoteTernaries_permutation: forall A B,
+        Permutation A B ->
+        (denoteTernaries A <-> denoteTernaries B).
+    Proof.
+      induction 1; cbn; firstorder. 
+    Qed.
+    
     Definition SemDeriv Ψ Γ Δ : Prop :=
       denoteTernaries Ψ /\ denoteSequentL Γ -> denoteSequentR Δ.
 
@@ -481,7 +522,14 @@ Require Import Sorting.Permutation.
       Ψ ;, Γ ⊨ Δ.
     Proof.
       rewrite /SemDeriv => hΨ hΓ hΔ.
-    Admitted.
+      intros.
+      apply denoteTernaries_permutation in hΨ.
+      apply denoteSequentR_permutation in hΔ.
+      apply denoteSequentL_permutation in hΓ.
+      rewrite hΔ.
+      apply H.
+      now rewrite <- hΨ, <- hΓ.
+    Qed.
 
     #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound DEq_sound DPerm_sound : sound.
 
