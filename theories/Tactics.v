@@ -38,7 +38,7 @@ Module Solver
         let a := reifyAssertion p in
         let b := reifyAssertion q in
         '(AWand $a $b)
-    | _ => Control.backtrack_tactic_failure "failed to reifyAssertion"
+    | _ => Control.backtrack_tactic_failure "failed to reify assertions"
     end.
   Local Open Scope sepscope.
 
@@ -85,5 +85,14 @@ Module Solver
     have := expToRelAtoms_sound a.
     tauto.
   Qed.
+
+  Ltac2 reifyGoal () :=
+    lazy_match! goal with
+    | [|- ?a ∈ ?p] =>
+        let ar := reifyExp a in
+        let pr := reifyAssertion p in
+        apply (transform_sound $ar $pr)
+    | [|- _] => Control.backtrack_tactic_failure "failed to reify the goal"
+    end.
 
 End Solver.
