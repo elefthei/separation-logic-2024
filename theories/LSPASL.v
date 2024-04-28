@@ -521,14 +521,6 @@ Require Import Sorting.Permutation.
       now rewrite <- hΨ, <- hΓ.
     Qed.
 
-    Lemma DId' Ψ w p Γ Δ :
-      In (w , AVar p) Γ ->
-      In (w , AVar p) Δ ->
-    (* ------------------- *)
-      Ψ ;; Γ ⊢ Δ.
-    Admitted.
-               
-
     #[local]Hint Resolve DId_sound DCut_sound DBotL_sound DEmpL_sound DAndL_sound DAndR_sound DStarL_sound DImpL_sound DImpR_sound DTopR_sound DEmpR_sound DWandR_sound DStarR_sound DWandL_sound DE_sound DA_sound DU_sound DAC_sound DEq_sound DPerm_sound : sound.
 
     #[export]Hint Constructors Deriv : core.
