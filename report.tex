@@ -1,0 +1,67 @@
+\documentclass[12pt,lettersize]{article}
+\input{util}
+
+\title{Report: Automated simplification tactics over separation algebras.}
+\author{Lef Ioannidis, Yiyun Liu}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+This project proposes the development of automated reasoning tactics for Separation Logic in Coq's Ltac2, based on the \emph{separata}
+and \emph{starforce} tactics~\cite{hou2017proof} in Isabel/HOL. The proposed automation will be
+abstract over Separation Algebras (SAs)~\cite{calcagno2007local}, to ensure general applicability to programs with 
+ghost state and different shared resources, and will leverage automation techniques like proof-by-reflection.
+The overall goal is to partially automate the verification process of Separation Logic programs by building
+a more efficient and general version of \texttt{xsimpl}~\cite{chargueraud2020separation}.
+\end{abstract}
+
+\section{Background and Motivation}
+Separation logic significantly simplifies reasoning about programs that manipulate heap-allocated memory, offering a framework
+to ensure the correctness of these operations. The tactics introduced in "Separation Logic Foundations"~\cite{chargueraud2020separation}
+are especially effective, although their implementation is "fairly involved", according to their author. The \texttt{xsimpl} tactic
+for automatically solving assertions is particularly ad-hoc, defined as a functor over many separation logic primitives and laws,
+making it cumbersome to initialize.
+
+A more structured and general altenative by Hou et al~\cite{hou2017proof} for Isabelle/HOL, provides powerful automated reasoning
+capabilities within Separation Logics. Adapting these tactics --- specifically \emph{separata} and 
+\emph{starforce} --- for Coq's Ltac2 language can greatly enhance the separation logic verification process in Coq.
+By abstracting these tactics over SAs~\cite{calcagno2007local} we aim to offer
+flexible tactics that can be applied to programs with ghost state, permissions~\cite{bornat2005permission}, 
+histories~\cite{sergey2015specifying} and more.
+
+\section{Project Goal}
+Our goal is to implement the \emph{separata} and \emph{starforce} tactics for separation logic in Coq's Ltac2, abstracting over
+a Partial Commutative Monoid (PCM) structure modeling the shared resources at hand. This implementation will not only replicate
+the functionalities outlined in the referenced paper but also extend them with techniques
+like \emph{proof-by-reflection}.
+
+We will evaluate the success of this project by semi-automating the proving of two examples over at two different SAs.
+
+\section{Deliverables}
+This project will result in several key components that improve the automated reasoning capabilities of the Coq proof assistant in 
+separation logics. The core deliverables include:
+
+\begin{itemize}
+\item \textbf{Separata Tactic:} A fully implemented \emph{separata} tactic within Coq's Ltac2 language, enabling automated
+reasoning over separation logic assertions. The \emph{separata} tactic is based on an embedding of a labelled sequent calculus
+and is designed to work with abstract separation logic~\cite{hou2017proof}.
+
+\item \textbf{Starforce tactic:} Also implemented in Ltac2, equipped with specialized proof search strategies for efficiently handling
+separating conjunctions and magic wands. This tactic will further automate the reasoning process with more specialized
+automation.
+
+\item \textbf{PCM Algebraic Structure:} An algebraic structure for Partial Commutative Monoids (PCMs).
+This structure will ensure that the tactics are not only applicable to heaps, but a wide range of separation algebras as well.
+
+\item \textbf{Examples:} A collection of examples demonstrating the use of the implemented tactics in automating the proof of properties
+across two different separation algebras. These examples will showcase the power and flexibility of the tactics in realistic 
+formal verification use-cases.
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{main}
+
+\end{document}

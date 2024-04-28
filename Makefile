@@ -20,7 +20,13 @@ proposal.pdf: proposal.tex main.bib util.tex
 	pdflatex proposal.tex
 	pdflatex proposal.tex
 
+report.pdf: report.tex main.bib util.tex
+	pdflatex report.tex
+	bibtex report
+	pdflatex report.tex
+	pdflatex report.tex
+
 .PHONY: clean
 clean:
 	test ! -f $(COQMAKEFILE) || ( $(MAKE) -f $(COQMAKEFILE) clean && rm $(COQMAKEFILE) )
-	-rm -f proposal.pdf proposal.aux proposal.log
+	-rm -f proposal.pdf proposal.aux proposal.log report.pdf report.aux report.log
