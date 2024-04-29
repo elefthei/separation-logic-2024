@@ -2,6 +2,7 @@ Require Import LSPASL.
 From Ltac2 Require Ltac2.
 Require Import ssreflect.
 Import Ltac2.
+From Hammer Require Import Tactics Hammer.
 
 Set Default Proof Mode "Classic".
 Module Solver
@@ -109,16 +110,19 @@ Module Solver
     rewrite left_id. apply valid_unit.
   Qed.
 
-  Lemma ex3 (a b : T) A B :
+  Lemma ex3 (a b : T) (A B : T -> Prop) :
     valid_op (a \+ b) ->
-    (a ; b ▻ a \+ b)::nil ;; (b , AVar B) :: (a , AVar A) :: nil ⊢ (a \+ b , AStar (AVar A) (AVar B)) :: nil ->
-    a ∈ A ->
-    b ∈ B ->
-    a \+ b ∈ sstar A B.
+    a \+ b ∈ simp (sstar A B) (sstar B A).
   Proof.
-    move => h /soundness.
-    rewrite /SemDeriv //=.
-    rewrite /elemIn. tauto.
+    move => h.
+    ltac2:(reifyGoal ()) => //=.
+    apply DImpR.
+    apply DStarL => x y.
+    apply DE.
+    apply DStarR.
+    eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
+      solve [apply Permutation.Permutation_refl | sfirstorder].
+    apply DId.
   Qed.
 
 End Solver.
