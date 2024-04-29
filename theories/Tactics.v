@@ -120,9 +120,9 @@ Module Solver
     apply DStarL => x y.
     apply DE.
     apply DStarR.
-    eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
-      solve [apply Permutation.Permutation_refl | sfirstorder].
-    apply DId.
+    - eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
+        solve [apply Permutation.Permutation_refl | sfirstorder].
+    - apply DId.
   Qed.
 
 End Solver.
