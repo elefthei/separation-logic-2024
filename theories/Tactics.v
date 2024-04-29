@@ -84,7 +84,6 @@ Module Solver
   Proof.
     move => + /soundness.
     rewrite /SemDeriv //=.
-    move => h h1.
     have := expToRelAtoms_sound a.
     tauto.
   Qed.
@@ -100,14 +99,18 @@ Module Solver
 
   Lemma ex1 : unit_op ∈ semp.
   Proof.
-    ltac2:(reifyGoal ()) => //=.
-    apply valid_unit; eauto.
+    ltac2:(reifyGoal ()); first by apply valid_unit.
+    eauto.
   Qed.
 
   Lemma ex2 : unit_op \+ unit_op ∈ sstar semp semp.
   Proof.
-    ltac2:(reifyGoal ()) => //=; last by eauto.
-    rewrite left_id. apply valid_unit.
+    ltac2:(reifyGoal ()).
+    - simpl. rewrite left_id. exact valid_unit.
+    - simpl.
+      apply DStarR.
+      apply DEmpR.
+      apply DEmpR.
   Qed.
 
   Lemma ex3 (a b : T) (A B : T -> Prop) :
