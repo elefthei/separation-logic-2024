@@ -123,7 +123,7 @@ Module Solver
     apply DE.
     apply DStarR.
     - eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
-        solve [apply Permutation.Permutation_refl | sfirstorder].
+        solve [reflexivity | sfirstorder].
     - apply DId.
   Qed.
 
