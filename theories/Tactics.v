@@ -2,7 +2,6 @@ Require Import LSPASL.
 From Ltac2 Require Ltac2.
 Require Import ssreflect.
 Import Ltac2.
-From Hammer Require Import Tactics Hammer.
 
 Set Default Proof Mode "Classic".
 Module Solver
