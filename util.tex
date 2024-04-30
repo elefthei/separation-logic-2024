@@ -10,4 +10,29 @@
 \usepackage{todonotes}
 
 \newcommandx{\lef}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,size=\footnotesize,#1]{LEF: #2}}
+\newcommand{\mwand}{\mathrel{-\mkern-6mu*}}
+\newcommand{\valid}[1]{\texttt{valid}\ #1}
 
+\usepackage{listings,lstlangcoq}
+\lstdefinestyle{coq}{
+  columns=flexible,
+  mathescape=true,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=0pt,
+  language=Coq,
+  morekeywords={Variant, fun, Arguments, Type, cofix},
+  % morekeywords={SOCKAPI,ITREE,data_at,data_at_},
+  emph={%
+    SOCKAPI,ITree,CTree,data_at,data_at_
+  },
+  emphstyle={\bfseries\color{green!40!red!80}},
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{green!20!black},
+  commentstyle=\itshape\color{red!40!black},
+  identifierstyle=\color{violet!50!black},
+  stringstyle=\color{orange},
+  escapeinside={<@}{@>}
+}
+\newcommand{\inlinecoq}[1]{\mbox{\lstinline[style=coq,columns=fixed,basewidth=.48em]{#1}}}

@@ -104,12 +104,9 @@ Module Solver
 
   Lemma ex2 : unit_op \+ unit_op ∈ sstar semp semp.
   Proof.
-    ltac2:(reifyGoal ()).
-    - simpl. rewrite left_id. exact valid_unit.
-    - simpl.
-      apply DStarR.
-      apply DEmpR.
-      apply DEmpR.
+    ltac2:(reifyGoal ()); simpl.
+    - rewrite left_id. exact valid_unit.
+    - eauto.
   Qed.
 
   Lemma ex3 (a b : T) (A B : T -> Prop) :
@@ -121,10 +118,9 @@ Module Solver
     apply DImpR.
     apply DStarL => x y.
     apply DE.
-    apply DStarR.
-    - eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
+    apply DStarR; auto.
+    eapply DPerm with (Γ' := (y, AVar B) :: (x, AVar A) :: nil);
         solve [reflexivity | sfirstorder].
-    - apply DId.
   Qed.
 
 End Solver.

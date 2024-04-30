@@ -1,6 +1,6 @@
 COQMAKEFILE=CoqMakefile
 
-all: theories proposal.pdf
+all: theories report.pdf proposal.pdf
 
 theories: $(COQMAKEFILE)
 	$(MAKE) -f $^
