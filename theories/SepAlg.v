@@ -25,9 +25,6 @@ Parameter valid_monoL : forall a b,
 
 Parameter valid_unit : valid_op unit_op.
 
-Parameter join_cancelL : forall a b c,
-    valid_op (a \+ c) -> a \+ c = b \+ c -> a = b.
-
 End SepAlg.
 
 Module SepAlgFacts (Import M : SepAlg).

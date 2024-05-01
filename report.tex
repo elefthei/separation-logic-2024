@@ -15,7 +15,8 @@ for Abstract Separation Logic based on Separation Algebras ~\cite{calcagno2007lo
 a variety of effects, without having to redefine the proof search and simplification for each one. We demonstrate the generality of LSPASL
 by instantiating a Heap Separation algebra and the effectiveness with several examples of autoated simplification.
 In comparison to \texttt{xsimpl} for Separation Logic Foundations ~\cite{chargueraud2020separation}
-our approach is more structured and more general and shows potential for adoption.
+our approach is more structured and more general and shows potential for adoption. Our coq development is open source and available
+online~\cite{github}.
 \end{abstract}
 
 \section{Background and Motivation}
@@ -152,7 +153,7 @@ Now we can prove the syntactic lemmas of LSPASL which are used during proof sear
 
 We proved the syntatic rules in fig.~\ref{fig:lspasl} in Coq and also proved soundness, meaning the syntactic rules follow from the semantic definition
 of LSPASL satisfiability.
-$$ \forall \mathcal{G}, \ \Gamma,\ \Delta. \ \mathcal{G}.\ \Gamma \vdash \Delta  \to  \mathcal{G},\ \Gamma \vDash \Delta $$
+$$ \forall\ \mathcal{G} \ \Gamma\ \Delta, \ \mathcal{G},\ \Gamma \vdash \Delta  \to  \mathcal{G},\ \Gamma \vDash \Delta $$
 
 \section{Reify tactic}
 

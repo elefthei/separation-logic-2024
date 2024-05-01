@@ -35,8 +35,8 @@ Module HeapAlg <: SepAlg.
                 | None, None, None, None => Some (fun _ => None)
                 | _, _, _, _ => None
                 end
-            | None, a => None
-            | a, None => None
+            | None, _ => None
+            | _, None => None
             end.
 
   (* WTF Why can't I do [Local Open Scope sepscope] *)
@@ -90,46 +90,6 @@ Module HeapAlg <: SepAlg.
   Proof.
     intros; rewrite comm; apply left_id.
   Qed.
-  
-  Lemma join_cancelL : forall a b c,
-      valid_op (a \+ c) -> a \+ c = b \+ c -> a = b.
-  Proof.
-    (* Only consider [valid a, b, c] *)
-    intros a b c Hac H.
-    assert (Hbc: valid_op (b \+ c)) by now rewrite H in Hac.
-    assert (Ha: valid_op a) by now apply valid_monoL in Hac.
-    assert (Hb: valid_op b) by now apply valid_monoL in Hbc.
-    assert (Hc: valid_op c) by now apply valid_monoR in Hac.
-    destruct a as [a|]; destruct b as [b|]; destruct c as [c|];
-      unfold valid_op in Ha, Hb, Hc;
-      cbn in Ha, Hb, Hc;
-      match goal with
-      | [H: is_true false |- _ ] => inv H
-      | _ => idtac
-      end; clear Ha Hb Hc.
-    (* Inversion of H *)
-    apply some_eq_iff, functional_extensionality.
-    unfold join_op in *.    
-    intros [];
-      destruct (a true) eqn: Hft; auto;
-      destruct (a false) eqn:Hff; auto;
-      destruct (b true) eqn:Hgt; auto;
-      destruct (b false) eqn:Hgf; auto;
-      destruct (c true) eqn:Hht; auto;
-      destruct (c false) eqn:Hhf; auto;
-      rewrite ?Hft ?Hgt ?Hht ?Hff ?Hgf ?Hhf in H;
-      repeat (lazymatch goal with
-              | [H: is_true (valid_op None) |- _ ] => inv H
-              | [H: Some ?a = Some ?b |- _ ] => inv H
-              | [H: None = Some ?b |- _ ] => inversion H
-              | [H: Some ?a = None |- _ ] => inversion H
-              | _ => fail
-              end); rewrite <- ?Hft, <- ?Hgt, <- ?Hht, <- ?Hff, <- ?Hgf, <- ?Hhf; auto;
-      rewrite ?Hff in Hgf; inv Hgf;
-      rewrite ?Hft in Hgt; inv Hgt.
-     - apply equal_f with true in H1; inv H1; now rewrite Hft.
-     - apply equal_f with false in H1; inv H1; now rewrite Hff. 
-  Qed.       
 
 End HeapAlg.
     
